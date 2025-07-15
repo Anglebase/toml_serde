@@ -1,0 +1,10 @@
+[project]
+name = "toml_serde"
+version = "0.1.0"
+type = "interface"
+
+[build]
+stdcxx = 20
+
+[dependencies]
+tomlpp = { url = "@Anglebase/tomlpp", version = "3.4.0" }
