@@ -172,12 +172,12 @@ namespace data
         }                                                                                       \
     }
 
-#define TOML_REQUIRE(k, name)            \
+#define _TOML_REQUIRE(k, name)            \
     require(table, name, result.k, key); \
     _had_keys.insert(name)
-#define TOML_OPTIONS(k, name)            \
+#define _TOML_OPTIONS(k, name)            \
     options(table, name, result.k, key); \
     _had_keys.insert(name)
 
-#define TOML_REQUIRE(k) TOML_REQUIRE(k, #k)
-#define TOML_OPTIONS(k) TOML_OPTIONS(k, #k)
+#define TOML_REQUIRE(k) _TOML_REQUIRE(k, #k)
+#define TOML_OPTIONS(k) _TOML_OPTIONS(k, #k)
