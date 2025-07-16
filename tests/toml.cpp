@@ -10,7 +10,7 @@ namespace data
         int64_t y;
     };
 
-    TOML_DESERIALIZE(Point, {
+    TOML_DESERIALIZE_W(Point, {
         TOML_REQUIRE(x);
         TOML_REQUIRE(y);
     });

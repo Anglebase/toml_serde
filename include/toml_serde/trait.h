@@ -152,7 +152,23 @@ namespace data
     }
 }
 
-#define TOML_DESERIALIZE(T, MEMBER)                                                             \
+#define TOML_DESERIALIZE(T, MEMBER)                                                   \
+    template <>                                                                       \
+    struct Deserializer<T>                                                            \
+    {                                                                                 \
+        static inline T deserialize(const toml::node &v, const std::string &key = "") \
+        {                                                                             \
+            if (!v.is_table())                                                        \
+                throw std::runtime_error(key + " is not a table");                    \
+            auto table = *v.as_table();                                               \
+            std::unordered_set<std::string> _had_keys;                                \
+            T result;                                                                 \
+            MEMBER                                                                    \
+            return result;                                                            \
+        }                                                                             \
+    }
+
+#define TOML_DESERIALIZE_W(T, MEMBER)                                                           \
     template <>                                                                                 \
     struct Deserializer<T>                                                                      \
     {                                                                                           \
@@ -172,10 +188,10 @@ namespace data
         }                                                                                       \
     }
 
-#define _TOML_REQUIRE(k, name)            \
+#define _TOML_REQUIRE(k, name)           \
     require(table, name, result.k, key); \
     _had_keys.insert(name)
-#define _TOML_OPTIONS(k, name)            \
+#define _TOML_OPTIONS(k, name)           \
     options(table, name, result.k, key); \
     _had_keys.insert(name)
 
