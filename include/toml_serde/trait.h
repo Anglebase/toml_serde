@@ -5,8 +5,10 @@
 #include <vector>
 #include <map>
 #include <optional>
+#include <iostream>
 #include <filesystem>
 #include <algorithm>
+#include <unordered_set>
 namespace fs = std::filesystem;
 
 namespace data
@@ -142,27 +144,40 @@ namespace data
     template <Deserializable T>
     T parse_toml_file(const fs::path &path)
     {
-        fs::path& base = Deserializer<fs::path>::BASE_PATH;
+        fs::path &base = Deserializer<fs::path>::BASE_PATH;
         base = path.parent_path();
-        if(base.is_relative())
+        if (base.is_relative())
             base = fs::current_path() / base;
         return Deserializer<T>::deserialize(toml::parse_file(path.string()));
     }
 }
 
-#define TOML_DESERIALIZE(T, MEMBER)                                                   \
-    template <>                                                                       \
-    struct Deserializer<T>                                                            \
-    {                                                                                 \
-        static inline T deserialize(const toml::node &v, const std::string &key = "") \
-        {                                                                             \
-            if (!v.is_table())                                                        \
-                throw std::runtime_error(key + " is not a table");                    \
-            auto table = *v.as_table();                                               \
-            T result;                                                                 \
-            MEMBER return result;                                                     \
-        }                                                                             \
+#define TOML_DESERIALIZE(T, MEMBER)                                                             \
+    template <>                                                                                 \
+    struct Deserializer<T>                                                                      \
+    {                                                                                           \
+        static inline T deserialize(const toml::node &v, const std::string &key = "")           \
+        {                                                                                       \
+            if (!v.is_table())                                                                  \
+                throw std::runtime_error(key + " is not a table");                              \
+            auto table = *v.as_table();                                                         \
+            std::unordered_set<std::string> _had_keys;                                          \
+            T result;                                                                           \
+            MEMBER                                                                              \
+            for (const auto &[k, v] : table)                                                    \
+                if (!_had_keys.contains(std::string(k.str())))                                  \
+                    std::cout << "[TOML] Warning: '" << key << (key.empty() ? "" : ".")         \
+                              << _to_key(std::string(k.str())) << "' is ignored." << std::endl; \
+            return result;                                                                      \
+        }                                                                                       \
     }
 
-#define TOML_REQUIRE(k) require(table, #k, result.k, key)
-#define TOML_OPTIONS(k) options(table, #k, result.k, key)
+#define TOML_REQUIRE(k, name)            \
+    require(table, name, result.k, key); \
+    _had_keys.insert(name)
+#define TOML_OPTIONS(k, name)            \
+    options(table, name, result.k, key); \
+    _had_keys.insert(name)
+
+#define TOML_REQUIRE(k) TOML_REQUIRE(k, #k)
+#define TOML_OPTIONS(k) TOML_OPTIONS(k, #k)
